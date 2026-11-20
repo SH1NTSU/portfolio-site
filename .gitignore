@@ -2,3 +2,4 @@
 animations/
 renders/
 .vercel
+.env*
