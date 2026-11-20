@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marcel Budziszewski — developer</title>
+<meta name="description" content="Marcel Budziszewski: student developer from Warsaw. Native apps in Zig, simulations in C++, full-stack web, AI tooling.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #05060a; --fg: #e9ecf5; --dim: #8a90a6; --line: #1b1f2e; --a: #8b5cf6; --b: #22d3ee; --c: #f472b6; }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; } @media (max-height: 600px) { .beat p { font-size: 16px; } .beat { bottom: 10vh; } }
+  body { background: var(--bg); color: var(--fg); font: 400 17px/1.6 "Space Grotesk", system-ui, sans-serif; overflow-x: hidden; }
+  a { color: inherit; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  .grad { background: linear-gradient(100deg, var(--a), var(--b) 55%, var(--c)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* nav */
+  nav { position: fixed; inset: 0 0 auto; z-index: 10; display: flex; justify-content: space-between; align-items: center; padding: 18px 6vw; mix-blend-mode: difference; }
+  nav .logo { font-weight: 700; letter-spacing: .02em; text-decoration: none; }
+  nav ul { display: flex; gap: 28px; list-style: none; padding: 0; }
+  nav ul a { text-decoration: none; font-size: 14px; opacity: .8; } nav ul a:hover { opacity: 1; }
+  @media (max-width: 640px) { nav ul { display: none; } }
+
+  /* hero: scroll-scrubbed */
+  #hero-track { height: 320vh; position: relative; }
+  #hero-track .stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  #hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 70% 40%, #1a1240, var(--bg) 70%); }
+  #hero-track .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(5,6,10,.85) 0%, rgba(5,6,10,.35) 45%, transparent 70%), linear-gradient(0deg, var(--bg) 0%, transparent 25%); }
+  .beat { position: absolute; z-index: 2; left: 6vw; bottom: 16vh; max-width: 42rem; opacity: 0; transform: translateY(24px); transition: opacity .6s, transform .6s; pointer-events: none; }
+  .beat.on { opacity: 1; transform: none; pointer-events: auto; }
+  .beat .kicker { font-size: 13px; letter-spacing: .25em; text-transform: uppercase; color: var(--b); }
+  .beat h1 { font-size: clamp(44px, min(9vw, 15vh), 128px); line-height: .95; font-weight: 700; letter-spacing: -.03em; margin: 14px 0 18px; }
+  .beat h2 { font-size: clamp(30px, min(5.5vw, 9vh), 72px); line-height: 1.02; letter-spacing: -.02em; margin-bottom: 14px; }
+  .beat p { font-size: clamp(17px, 1.6vw, 21px); color: #c5cadb; max-width: 34rem; }
+  .scroll-hint { position: absolute; z-index: 2; left: 50%; bottom: 28px; transform: translateX(-50%); font-size: 12px; color: var(--dim); letter-spacing: .2em; transition: opacity .4s; }
+  .scroll-hint::after { content: ""; display: block; width: 1px; height: 36px; margin: 10px auto 0; background: linear-gradient(var(--b), transparent); animation: drip 1.8s infinite; }
+  @keyframes drip { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+  .btn { display: inline-flex; gap: 10px; align-items: center; margin-top: 22px; padding: 13px 22px; border-radius: 999px; text-decoration: none; font-weight: 500; background: linear-gradient(100deg, var(--a), var(--b)); color: #05060a; }
+  .btn.ghost { background: none; color: var(--fg); border: 1px solid #343a52; margin-left: 10px; }
+
+  /* sections */
+  section.block { padding: 140px 6vw; max-width: 1280px; margin: 0 auto; }
+  .label { font-size: 13px; letter-spacing: .25em; text-transform: uppercase; color: var(--dim); margin-bottom: 18px; }
+  .label b { color: var(--b); font-weight: 600; }
+  h3.title { font-size: clamp(32px, 4.5vw, 58px); line-height: 1.05; letter-spacing: -.02em; margin-bottom: 28px; max-width: 18ch; }
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  .about { display: grid; grid-template-columns: 1.3fr 1fr; gap: 64px; align-items: start; }
+  .about p { color: #c5cadb; font-size: 20px; margin-bottom: 18px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .stat { border: 1px solid var(--line); border-radius: 18px; padding: 22px; background: linear-gradient(160deg, #0d1020, #070810); }
+  .stat .n { font-size: 40px; font-weight: 700; } .stat .t { color: var(--dim); font-size: 14px; }
+  @media (max-width: 860px) { .about { grid-template-columns: 1fr; } }
+
+  /* projects */
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+  .card { --mx: 50%; --my: 50%; position: relative; grid-column: span 2; border: 1px solid var(--line); border-radius: 22px; padding: 28px; background: #090b14; overflow: hidden; transition: transform .25s, border-color .25s; transform-style: preserve-3d; }
+  .card.wide { grid-column: span 3; } .card.full-lite { grid-column: span 6; } .card.full { grid-column: span 6; }
+  .card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(420px circle at var(--mx) var(--my), rgba(139,92,246,.18), transparent 60%); opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .card:hover { border-color: #2e3450; } .card:hover::before { opacity: 1; }
+  .card .tag { font-size: 12px; color: var(--b); letter-spacing: .12em; text-transform: uppercase; }
+  .card h4 { font-size: 28px; letter-spacing: -.01em; margin: 10px 0 10px; }
+  .card.full h4 { font-size: clamp(34px, 4vw, 52px); }
+  .card p { color: #b3b9cc; font-size: 16px; }
+  .card ul { margin: 14px 0 0; padding-left: 18px; color: #b3b9cc; font-size: 15px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .chips span { font: 500 12px "JetBrains Mono", monospace; padding: 5px 10px; border-radius: 999px; border: 1px solid #262b40; color: #cdd2e3; }
+  .card a.more { display: inline-block; margin-top: 16px; font-size: 14px; color: var(--b); text-decoration: none; }
+  .card.full { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; padding: 40px; background: linear-gradient(140deg, #110d26, #071016); }
+  .vision-art { position: relative; min-height: 280px; border-radius: 16px; border: 1px solid #262b40; overflow: hidden; background: #04050a; }
+  .vision-art canvas { width: 100%; height: 100%; display: block; position: absolute; inset: 0; }
+  @media (max-width: 960px) { .card, .card.wide, .card.full-lite { grid-column: span 6; } .card.full { grid-template-columns: 1fr; } }
+
+
+  .mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .mini { display: flex; flex-direction: column; gap: 8px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: #080a12; text-decoration: none; transition: border-color .25s, transform .25s; }
+  a.mini:hover { border-color: #3a3170; transform: translateY(-3px); }
+  .mini b { font-size: 18px; } .mini span { color: #a9afc3; font-size: 14.5px; line-height: 1.5; flex: 1; }
+  .mini i { font: 500 12px "JetBrains Mono", monospace; font-style: normal; color: var(--b); }
+  .more-all { margin-top: 26px; } .more-all a { color: var(--b); text-decoration: none; }
+
+  /* stack marquee */
+  .marquee { overflow: hidden; border-block: 1px solid var(--line); padding: 26px 0; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+  .marquee .row { display: flex; gap: 56px; width: max-content; animation: slide 40s linear infinite; font-size: clamp(26px, 3.4vw, 44px); font-weight: 700; color: #2a3048; }
+  .marquee .row span:nth-child(3n+1) { color: #d9ddea; }
+  .marquee.rev .row { animation-direction: reverse; animation-duration: 52s; }
+  @keyframes slide { to { transform: translateX(-50%); } }
+
+  /* timeline */
+  .timeline { position: relative; border-left: 1px solid #262b40; margin-left: 8px; }
+  .timeline li { list-style: none; position: relative; padding: 0 0 46px 34px; }
+  .timeline li::before { content: ""; position: absolute; left: -6px; top: 8px; width: 11px; height: 11px; border-radius: 50%; background: var(--bg); border: 2px solid var(--b); box-shadow: 0 0 14px var(--b); }
+  .timeline .when { font-size: 13px; color: var(--dim); }
+  .timeline h5 { font-size: 22px; margin: 2px 0 6px; } .timeline p { color: #b3b9cc; max-width: 46rem; }
+
+  /* contact */
+  .contact { text-align: center; padding-bottom: 80px; }
+  .contact h3 { font-size: clamp(44px, 8vw, 112px); line-height: .95; letter-spacing: -.03em; margin: 0 auto 30px; max-width: none; }
+  footer { text-align: center; color: var(--dim); font-size: 13px; padding: 40px 0 50px; border-top: 1px solid var(--line); }
+
+  @media (prefers-reduced-motion: reduce) {
+    #hero-track { height: 100vh; } .beat { position: static; opacity: 1; transform: none; padding: 0 6vw; } .beat + .beat { display: none; }
+    #hero-track .stage { display: flex; align-items: flex-end; padding-bottom: 16vh; }
+    .reveal { opacity: 1; transform: none; } .marquee .row { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo mono" href="#top">mb<span class="grad">.</span>dev</a>
+  <ul><li><a href="#about">About</a></li><li><a href="#work">Work</a></li><li><a href="#more">More</a></li><li><a href="#path">Experience</a></li><li><a href="#contact">Contact</a></li></ul>
+</nav>
+
+<section id="hero-track">
+  <div class="stage" id="top">
+    <canvas id="hero-canvas"></canvas>
+    <div class="beat" data-from="0" data-to="0.3">
+      <div class="kicker mono">Student developer · Warsaw</div>
+      <h1>Marcel<br><span class="grad">Budziszewski</span></h1>
+      <p>I build software end to end: native apps, simulations, payment systems and AI tools. Mostly because I want to use them myself.</p>
+    </div>
+    <div class="beat" data-from="0.36" data-to="0.64">
+      <div class="kicker mono">From the metal…</div>
+      <h2>Zig, C++ and Rust<br>when it has to be fast.</h2>
+      <p>A macOS workspace written in Zig, an electric-car physics simulator in C++, small tools in Rust.</p>
+    </div>
+    <div class="beat" data-from="0.7" data-to="1">
+      <div class="kicker mono">…to the web and AI</div>
+      <h2>TypeScript, Go and Python<br>when it has to ship.</h2>
+      <p>Full-stack apps with real payments, geo data at country scale, and a language model trained from scratch.</p>
+      <a class="btn" href="#work">See the work ↓</a><a class="btn ghost" href="https://github.com/SH1NTSU" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <div class="scroll-hint mono">SCROLL</div>
+  </div>
+</section>
+
+<section class="block" id="about">
+  <div class="label mono"><b>01</b> — About</div>
+  <div class="about">
+    <div class="reveal">
+      <h3 class="title">I learn by building the <span class="grad">whole thing</span>.</h3>
+      <p>I'm a programming student at Technischools in Warsaw. Outside class I keep starting projects that are a bit too big for one person, and then finishing them.</p>
+      <p>I care about how things behave when they break: payments that can't go through twice, seats two people can't book at once, a free tier that never costs more than it earns.</p>
+    </div>
+    <div class="stats reveal">
+      <div class="stat"><div class="n grad">10+</div><div class="t">languages I've shipped code in</div></div>
+      <div class="stat"><div class="n grad">80+</div><div class="t">repositories on GitHub</div></div>
+      <div class="stat"><div class="n grad">150M</div><div class="t">parameter model trained from scratch</div></div>
+      <div class="stat"><div class="n grad">77</div><div class="t">tests guarding a team booking system</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="work">
+  <div class="label mono"><b>02</b> — Selected work</div>
+  <h3 class="title reveal">Things I've built.</h3>
+  <div class="grid">
+
+    <article class="card full reveal">
+      <div>
+        <div class="tag mono">Flagship · Zig · JavaScript · macOS</div>
+        <h4>Vision</h4>
+        <p>My own native macOS workspace for working with AI coding agents. It runs Claude Code in the background and shows the repository as a live 3D brain: you watch agents read and edit files as it happens.</p>
+        <ul>
+          <li>Native shell in Zig with a web UI, Neovim built in, its own browser for agents</li>
+          <li>Mission board, calendar, database viewer, one-click deploys</li>
+          <li>Talks to a Bambu Lab 3D printer over MQTT/FTPS: slice and print from the app</li>
+          <li>Plugin system for views, widgets and full skins (Cyberpunk, Star Wars, Westeros)</li>
+        </ul>
+        <div class="chips"><span>Zig</span><span>JavaScript</span><span>WebGL</span><span>MQTT</span><span>MCP</span></div>
+      </div>
+      <div class="vision-art"><canvas id="brain"></canvas></div>
+    </article>
+
+
+    <article class="card wide reveal">
+      <div class="tag mono">Team startup · Go · Python · TypeScript · Swift</div>
+      <h4>Talentic</h4>
+      <p>An AI recruitment platform we build as a team. Candidates make their CV with an AI builder, get tips in a chat, apply and track their status, on the web or in a native iOS app; recruiters get AI analysis of every application.</p>
+      <div class="chips"><span>Go API</span><span>Python · LangChain</span><span>Claude + OpenAI</span><span>SwiftUI</span><span>PostgreSQL</span><span>Redis</span></div>
+    </article>
+
+    <article class="card wide reveal">
+      <div class="tag mono">Hackathon · Netguru × Technischools 2026</div>
+      <h4>Rekurencyjne Rekiny</h4>
+      <p>24 hours to add features to a real online clothing store (Next.js 16, React 19, Medusa). I made 122 of the team's commits:</p>
+      <ul>
+        <li>an MCP server so a customer's AI agent can search, pick sizes and fill a cart, then hand it over with one link</li>
+        <li>"I want something like this": upload a photo, mark top, bottom and shoes, get matches by colour</li>
+        <li>an AR mirror where a 3D jacket turns with you and its sleeves follow your arms</li>
+        <li>a 3D stylist mannequin with 360° spins (TRELLIS + Blender), cross-brand comparison and catalog caching</li>
+      </ul>
+      <div class="chips"><span>Next.js 16</span><span>MCP</span><span>AR / 3D</span><span>Medusa</span><span>TypeScript</span></div>
+    </article>
+
+
+    <article class="card wide reveal">
+      <div class="tag mono">Simulation · C++</div>
+      <h4>voltway</h4>
+      <p>An autonomous electric-car simulator where the hard problem isn't steering, it's energy. The C++ backend runs the physics; the browser draws the map and the car in real time.</p>
+      <div class="chips"><span>C++</span><span>Pure Pursuit</span><span>PID control</span><span>Energy model</span></div>
+    </article>
+
+    <article class="card wide reveal">
+      <div class="tag mono">Geo data · Go · Postgres</div>
+      <h4>InPost Network Control</h4>
+      <p>I live in a village outside Warsaw and the nearest parcel locker is far away. So I built a map of Poland in ~1.5 km cells that finds where a new InPost point should go, weighing competitors and whether anyone actually lives there (OpenStreetMap).</p>
+      <div class="chips"><span>Go</span><span>PostgreSQL</span><span>OpenStreetMap</span><span>Geospatial</span></div>
+      <a class="more" href="https://github.com/SH1NTSU/Inpost-Coverage" target="_blank" rel="noopener">View on GitHub →</a>
+    </article>
+
+    <article class="card reveal">
+      <div class="tag mono">Team · Next.js</div>
+      <h4>PAI AIR</h4>
+      <p>Flight seat booking built by a team of four. Seats held for minutes, Stripe payments, a loyalty program and ticket emails.</p>
+      <ul><li>Idempotent API, race-safe booking, rate limiting</li><li>Saga with compensations over Stripe + Voucherify</li></ul>
+      <div class="chips"><span>TypeScript</span><span>Stripe</span><span>SQLite</span></div>
+    </article>
+
+    <article class="card reveal">
+      <div class="tag mono">Machine learning · Python</div>
+      <h4>Atlas</h4>
+      <p>A ~150M-parameter transformer I trained from scratch as a personal coding assistant: Llama-style, with RoPE, RMSNorm, SwiGLU and GQA.</p>
+      <div class="chips"><span>Python</span><span>LLM training</span><span>Transformers</span></div>
+      <a class="more" href="https://github.com/SH1NTSU/Atlas" target="_blank" rel="noopener">View on GitHub →</a>
+    </article>
+
+    <article class="card reveal">
+      <div class="tag mono">AI product · Next.js</div>
+      <h4>ogar</h4>
+      <p>A Polish AI friend in chat that gets people's money back: forgotten subscriptions, flight compensation, complaints. Code does the math, the model only talks.</p>
+      <div class="chips"><span>Next.js</span><span>LLM agents</span><span>SQLite</span></div>
+    </article>
+
+    <article class="card wide reveal">
+      <div class="tag mono">Platform · Go · React · Python</div>
+      <h4>AiManage</h4>
+      <p>A platform for training and managing AI models, with two training modes, a community marketplace and HuggingFace integration.</p>
+      <div class="chips"><span>Go</span><span>React</span><span>Python</span><span>HuggingFace</span></div>
+      <a class="more" href="https://github.com/SH1NTSU/AiManage" target="_blank" rel="noopener">View on GitHub →</a>
+    </article>
+
+    <article class="card wide reveal">
+      <div class="tag mono">Small tools · Rust · Zig · TypeScript</div>
+      <h4>The workbench</h4>
+      <p>An image-to-ASCII converter in Rust, a VPN server experiment in Zig, a Todo app with its own MCP server for AI agents, and my Neovim and NixOS setups.</p>
+      <div class="chips"><span>Rust</span><span>Zig</span><span>MCP</span><span>Nix</span><span>Lua</span></div>
+      <a class="more" href="https://github.com/SH1NTSU?tab=repositories" target="_blank" rel="noopener">All repositories →</a>
+    </article>
+
+  </div>
+</section>
+
+
+<section class="block" id="more">
+  <div class="label mono"><b>03</b> — More from the workbench</div>
+  <h3 class="title reveal">Smaller builds, experiments, school work.</h3>
+  <div class="mini-grid">
+    <div class="mini reveal"><b>Fleet control</b><span>LSP Group hackathon: trucks on a live map, KPIs, alerts and reports for a logistics company, built overnight.</span><i>Python · FastAPI · React · TypeScript</i></div>
+    <div class="mini reveal"><b>CodeCamp task manager</b><span>Technischools CodeCamp 2024: tasks, a scheduler and progress stats, built in two days.</span><i>React · Rust · Redis</i></div>
+    <a class="mini reveal" href="https://github.com/SH1NTSU" target="_blank" rel="noopener"><b>squire</b><span>Neovim plugin: fire an AI edit at one spot, keep typing elsewhere, accept the preview when it lands.</span><i>Lua</i></a>
+    <div class="mini reveal"><b>TechniDziennik</b><span>Generates the Technischools internship logbook: fill a form, print it 1:1 with the school template. No Word.</span><i>JavaScript · Node</i></div>
+    <a class="mini reveal" href="https://github.com/SH1NTSU/SecureDataInCloud-Backend" target="_blank" rel="noopener"><b>SecureDataInCloud</b><span>Files encrypted with AES on the server before they go to Google Cloud Storage; keys kept apart in a database.</span><i>Python · Flask · GCS</i></a>
+    <a class="mini reveal" href="https://github.com/SH1NTSU/MORS-code-PP-back" target="_blank" rel="noopener"><b>MORS code</b><span>Morse code messages sent from a web app through a Go backend to an ESP microcontroller.</span><i>Go · TypeScript · C / ESP</i></a>
+    <div class="mini reveal"><b>SmartHome</b><span>Home automation: ESP firmware, a Go backend and a TypeScript dashboard.</span><i>C++ / ESP · Go · TypeScript</i></div>
+    <a class="mini reveal" href="https://github.com/SH1NTSU/NeuralNetwork" target="_blank" rel="noopener"><b>NeuralNetwork</b><span>A neural network written from scratch in Zig.</span><i>Zig</i></a>
+    <a class="mini reveal" href="https://github.com/SH1NTSU/VPN" target="_blank" rel="noopener"><b>VPN + VPNUI</b><span>A VPN experiment in Zig with a native Swift client.</span><i>Zig · Swift</i></a>
+    <a class="mini reveal" href="https://github.com/SH1NTSU/fullstack-mcp-server" target="_blank" rel="noopener"><b>fullstack-mcp-server</b><span>Todo app with a REST API and its own MCP server so AI agents can use it.</span><i>TypeScript · MongoDB · MCP</i></a>
+    <a class="mini reveal" href="https://github.com/SH1NTSU/img_ascii_converter" target="_blank" rel="noopener"><b>img_ascii_converter</b><span>Turns images into ASCII art.</span><i>Rust</i></a>
+    <div class="mini reveal"><b>Password manager</b><span>Built three times to learn three languages.</span><i>Rust · Go · JavaScript</i></div>
+    <div class="mini reveal"><b>iOS / macOS apps</b><span>DriveBot, a language assistant, FoodApp and a floating input bar.</span><i>Swift</i></div>
+    <a class="mini reveal" href="https://github.com/SH1NTSU/Sudoku_Solver" target="_blank" rel="noopener"><b>Sudoku_Solver</b><span>Solves Sudoku puzzles.</span><i>Python</i></a>
+  </div>
+  <p class="more-all reveal"><a href="https://github.com/SH1NTSU?tab=repositories" target="_blank" rel="noopener">80+ repositories on GitHub →</a></p>
+</section>
+
+<div class="marquee"><div class="row mono" id="m1"></div></div>
+<div class="marquee rev"><div class="row mono" id="m2"></div></div>
+
+<section class="block" id="path">
+  <div class="label mono"><b>04</b> — Experience</div>
+  <h3 class="title reveal">Where I've worked and competed.</h3>
+  <ul class="timeline">
+    <li class="reveal"><div class="when mono">Internship</div><h5>Sedivio</h5><p>Software development internship.</p></li>
+    <li class="reveal"><div class="when mono">Oct 2026</div><h5>Hackathon Netguru × Technischools</h5><p>22–23 October 2026, Warsaw. Team Rekurencyjne Rekiny: an AI-agent shopping assistant over MCP, photo-based outfit matching and an AR fitting mirror for an online store, in 24 hours.</p></li>
+    <li class="reveal"><div class="when mono">2026</div><h5>InPost Network Control</h5><p>Country-scale geo analysis in Go and Postgres to find where new InPost points should go.</p></li>
+    <li class="reveal"><div class="when mono">Since Nov 2025</div><h5>Talentic</h5><p>Co-building an AI recruitment platform: Go API, Python AI service (Claude for application analysis, OpenAI for chat), web app and a SwiftUI iOS app.</p></li>
+    <li class="reveal"><div class="when mono">Oct 2025</div><h5>LSP Group hackathon</h5><p>29–30 October 2025, overnight, in a five-person team. A fleet control dashboard for a logistics company: live truck tracking on a map, KPIs, an alert system and reports, on a FastAPI backend fed with the organisers' route, segment and vehicle data. I built most of the API and merged the team's work, plus a small Gemini service.</p></li>
+    <li class="reveal"><div class="when mono">May 2024</div><h5>CodeCamp 2024 · Technischools</h5><p>Two-day team camp: a task manager with a scheduler and progress stats, React + SCSS on the front and Rust + Redis behind it. I built the home page and wired the branches together.</p></li>
+    <li class="reveal"><div class="when mono">School</div><h5>Technischools, Warsaw</h5><p>Programming technician track: INF.04 exam work (desktop, console and web apps) and a four-person booking system with real payments built in stages. Applying to university next.</p></li>
+  </ul>
+</section>
+
+<section class="block contact" id="contact">
+  <div class="label mono"><b>05</b> — Contact</div>
+  <h3 class="reveal">Let's build<br><span class="grad">something.</span></h3>
+  <a class="btn" href="mailto:marclbudziszewski@gmail.com">marclbudziszewski@gmail.com</a>
+  <a class="btn ghost" href="https://github.com/SH1NTSU" target="_blank" rel="noopener">GitHub</a>
+</section>
+
+<footer class="mono">© 2026 Marcel Budziszewski · built by hand, no framework</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Hero: scroll-scrubbed frames (hero/f001.jpg…), or a live star field until they exist ---------- */
+  const FRAMES = 'hero', COUNT = 120;
+  const track = document.getElementById('hero-track'), cv = document.getElementById('hero-canvas'), g = cv.getContext('2d');
+  const beats = [...track.querySelectorAll('.beat')], hint = track.querySelector('.scroll-hint');
+  const pad = (n) => String(n).padStart(3, '0');
+  const imgs = []; let useFrames = false, cur = 0, last = -1;
+  const probe = new Image();
+  probe.onload = () => {
+    useFrames = true;
+    for (let i = 0; i < COUNT; i++) { const im = new Image(); im.decoding = 'async'; im.src = `${FRAMES}/f${pad(i + 1)}.jpg`; im.onload = () => { if (i === Math.round(cur)) last = -1; }; imgs[i] = im; }
+  };
+  probe.src = `${FRAMES}/f001.jpg`;
+
+  const size = () => { const r = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth * r; cv.height = innerHeight * r; last = -1; };
+  const drawFrame = (i) => {
+    let im = imgs[i];
+    while (im && !im.complete && i > 0) im = imgs[--i];
+    if (!im?.complete || !im.naturalWidth) return;
+    const s = Math.max(cv.width / im.naturalWidth, cv.height / im.naturalHeight), w = im.naturalWidth * s, h = im.naturalHeight * s;
+    g.drawImage(im, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+  };
+
+  // Fallback: a 3D cloud of points that pulls together into a sphere-like "brain" as you scroll.
+  const N = 900, pts = Array.from({ length: N }, (_, i) => {
+    const t = Math.acos(1 - 2 * (i + .5) / N), f = Math.PI * (1 + Math.sqrt(5)) * i;
+    return { sx: (Math.random() - .5) * 6, sy: (Math.random() - .5) * 4, sz: (Math.random() - .5) * 6,
+             tx: Math.sin(t) * Math.cos(f), ty: Math.cos(t) * .82, tz: Math.sin(t) * Math.sin(f), hue: 250 + Math.random() * 80 };
+  });
+  const ease = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const drawField = (p, time) => {
+    const W = cv.width, H = cv.height, k = ease(Math.min(1, p * 1.25)), rot = time * .00012 + p * 2.4;
+    g.fillStyle = 'rgba(5,6,10,.38)'; g.fillRect(0, 0, W, H);
+    const cx = W * .66, cy = H * .48, scale = Math.min(W, H) * (.34 + .06 * k), proj = [];
+    for (const q of pts) {
+      let x = q.sx + (q.tx - q.sx) * k, y = q.sy + (q.ty - q.sy) * k, z = q.sz + (q.tz - q.sz) * k;
+      const c = Math.cos(rot), s = Math.sin(rot); [x, z] = [x * c - z * s, x * s + z * c];
+      if (z < -2.2) continue; const d = Math.min(1.8, 3.2 / (3.2 + z)); proj.push([cx + x * scale * d, cy + y * scale * d, d, q.hue]);
+    }
+    g.lineWidth = 1;
+    if (k > .55) for (let i = 0; i < proj.length; i += 3) for (let j = i + 3; j < Math.min(proj.length, i + 40); j += 3) {
+      const a = proj[i], b = proj[j], dx = a[0] - b[0], dy = a[1] - b[1], dd = dx * dx + dy * dy, lim = (scale * .16) ** 2;
+      if (dd < lim) { g.strokeStyle = `hsla(${a[3]},90%,65%,${(1 - dd / lim) * (k - .55) * .9})`; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }
+    }
+    for (const [x, y, d, h] of proj) { g.fillStyle = `hsla(${h},95%,${55 + d * 12}%,${.35 + d * .45})`; g.beginPath(); g.arc(x, y, .9 * d * devicePixelRatio, 0, 7); g.fill(); }
+  };
+
+  const progress = () => { const r = track.getBoundingClientRect(), max = track.offsetHeight - innerHeight; return Math.min(1, Math.max(0, -r.top / max)); };
+  (function tick(time) {
+    const p = reduce ? 0 : progress();
+    if (useFrames) {
+      const target = p * (COUNT - 1); cur += (target - cur) * .18; if (Math.abs(target - cur) < .01) cur = target;
+      const i = Math.round(cur); if (i !== last) { drawFrame(i); last = i; }
+    } else drawField(p, reduce ? 0 : time || 0);
+    if (!reduce) for (const b of beats) b.classList.toggle('on', p >= +b.dataset.from && p <= +b.dataset.to);
+    hint.style.opacity = p > .05 ? 0 : 1;
+    requestAnimationFrame(tick);
+  })();
+  addEventListener('resize', size); size();
+  if (reduce) beats[0].classList.add('on');
+
+  /* ---------- Vision card: a little glowing "repo brain" ---------- */
+  const bc = document.getElementById('brain'), bg = bc.getContext('2d');
+  const nodes = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random(), vx: (Math.random() - .5) * .0006, vy: (Math.random() - .5) * .0006, pulse: 0 }));
+  const bsize = () => { const r = Math.min(devicePixelRatio || 1, 2); bc.width = bc.clientWidth * r; bc.height = bc.clientHeight * r; };
+  (function brain() {
+    const W = bc.width, H = bc.height; bg.fillStyle = 'rgba(4,5,10,.35)'; bg.fillRect(0, 0, W, H);
+    if (Math.random() < .04) nodes[Math.random() * nodes.length | 0].pulse = 1;
+    for (const n of nodes) { if (!reduce) { n.x += n.vx; n.y += n.vy; } if (n.x < 0 || n.x > 1) n.vx *= -1; if (n.y < 0 || n.y > 1) n.vy *= -1; n.pulse *= .96; }
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j], d = Math.hypot((a.x - b.x) * W, (a.y - b.y) * H), lim = W * .16;
+      if (d < lim) { bg.strokeStyle = `rgba(${a.pulse + b.pulse > .3 ? '244,114,182' : '139,92,246'},${(1 - d / lim) * .5})`; bg.beginPath(); bg.moveTo(a.x * W, a.y * H); bg.lineTo(b.x * W, b.y * H); bg.stroke(); }
+    }
+    for (const n of nodes) { bg.fillStyle = n.pulse > .1 ? '#f472b6' : '#22d3ee'; bg.beginPath(); bg.arc(n.x * W, n.y * H, (2 + n.pulse * 5) * devicePixelRatio, 0, 7); bg.fill(); }
+    requestAnimationFrame(brain);
+  })();
+  addEventListener('resize', bsize); bsize();
+
+  /* ---------- Reveal on scroll, spotlight + tilt on cards, stack marquee ---------- */
+  const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && (e.target.classList.add('in'), io.unobserve(e.target))), { threshold: .15 });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+  if (!reduce) document.querySelectorAll('.card').forEach((c) => {
+    c.addEventListener('pointermove', (e) => {
+      const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      c.style.setProperty('--mx', x * 100 + '%'); c.style.setProperty('--my', y * 100 + '%');
+      c.style.transform = `perspective(900px) rotateX(${(.5 - y) * 4}deg) rotateY(${(x - .5) * 4}deg)`;
+    });
+    c.addEventListener('pointerleave', () => (c.style.transform = ''));
+  });
+  const fill = (id, words) => { const html = words.map((w) => `<span>${w}</span>`).join(''); document.getElementById(id).innerHTML = html + html; };
+  fill('m1', ['Zig', 'C++', 'TypeScript', 'Go', 'Rust', 'Python', 'React', 'Next.js', 'Swift', 'Java']);
+  fill('m2', ['PostgreSQL', 'SQLite', 'Stripe', 'Docker', 'Git', 'Linux / NixOS', 'Neovim', 'MongoDB', 'MCP', 'GSAP']);
+})();
+</script>
+</body>
+</html>
