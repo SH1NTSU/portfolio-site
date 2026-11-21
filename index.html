@@ -29,7 +29,7 @@
   #hero-track .stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
   #hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 70% 40%, #1a1240, var(--bg) 70%); }
   #hero-track .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(5,6,10,.85) 0%, rgba(5,6,10,.35) 45%, transparent 70%), linear-gradient(0deg, var(--bg) 0%, transparent 25%); }
-  .beat { position: absolute; z-index: 2; left: 6vw; bottom: 16vh; max-width: 42rem; opacity: 0; transform: translateY(24px); transition: opacity .6s, transform .6s; pointer-events: none; }
+  .beat { position: absolute; z-index: 2; left: 6vw; right: 6vw; bottom: 16vh; max-width: 42rem; opacity: 0; transform: translateY(24px); transition: opacity .6s, transform .6s; pointer-events: none; }
   .beat.on { opacity: 1; transform: none; pointer-events: auto; }
   .beat .kicker { font-size: 13px; letter-spacing: .25em; text-transform: uppercase; color: var(--b); }
   .beat h1 { font-size: clamp(44px, min(9vw, 15vh), 128px); line-height: .95; font-weight: 700; letter-spacing: -.03em; margin: 14px 0 18px; }
@@ -99,6 +99,10 @@
 
   /* contact */
   .contact { text-align: center; padding-bottom: 80px; }
+  .contact .links { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: nowrap; margin-top: 22px; }
+  .contact .links .btn { margin: 0; white-space: nowrap; }
+  .contact .short { display: none; }
+  @media (max-width: 520px) { .contact .long { display: none; } .contact .short { display: inline; } }
   .contact h3 { font-size: clamp(44px, 8vw, 112px); line-height: .95; letter-spacing: -.03em; margin: 0 auto 30px; max-width: none; }
   footer { text-align: center; color: var(--dim); font-size: 13px; padding: 40px 0 50px; border-top: 1px solid var(--line); }
 
@@ -299,8 +303,10 @@
 <section class="block contact" id="contact">
   <div class="label mono"><b>05</b> — Contact</div>
   <h3 class="reveal">Let's build<br><span class="grad">something.</span></h3>
-  <a class="btn" href="mailto:marclbudziszewski@gmail.com">marclbudziszewski@gmail.com</a>
-  <a class="btn ghost" href="https://github.com/SH1NTSU" target="_blank" rel="noopener">GitHub</a>
+  <div class="links">
+    <a class="btn" href="mailto:marclbudziszewski@gmail.com"><span class="long">marclbudziszewski@gmail.com</span><span class="short">Email me</span></a>
+    <a class="btn ghost" href="https://github.com/SH1NTSU" target="_blank" rel="noopener">GitHub</a>
+  </div>
 </section>
 
 <footer class="mono">© 2026 Marcel Budziszewski · built by hand, no framework</footer>
@@ -341,7 +347,7 @@
   const drawField = (p, time) => {
     const W = cv.width, H = cv.height, k = ease(Math.min(1, p * 1.25)), rot = time * .00012 + p * 2.4;
     g.fillStyle = 'rgba(5,6,10,.38)'; g.fillRect(0, 0, W, H);
-    const cx = W * .66, cy = H * .48, scale = Math.min(W, H) * (.34 + .06 * k), proj = [];
+    const narrow = W < H, cx = W * (narrow ? .5 : .66), cy = H * (narrow ? .27 : .48), scale = Math.min(W, H) * (narrow ? .36 + .04 * k : .34 + .06 * k), proj = [];
     for (const q of pts) {
       let x = q.sx + (q.tx - q.sx) * k, y = q.sy + (q.ty - q.sy) * k, z = q.sz + (q.tz - q.sz) * k;
       const c = Math.cos(rot), s = Math.sin(rot); [x, z] = [x * c - z * s, x * s + z * c];
